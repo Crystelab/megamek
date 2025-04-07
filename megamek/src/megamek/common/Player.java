@@ -51,6 +51,7 @@ public final class Player extends TurnOrdered {
     private String name;
     private String email;
     private final int id;
+    private PlayerRating rating;
 
     private int team = TEAM_NONE;
 
@@ -105,12 +106,15 @@ public final class Player extends TurnOrdered {
     private transient boolean votedToAllowGameMaster = false;
 
     private HexArea fleeArea = new BorderHexArea(true, true, true, true);
+    private PlayerStats stats;
+    
     //endregion Variable Declarations
 
     //region Constructors
     public Player(int id, String name) {
         this.name = name;
         this.id = id;
+        this.stats = new PlayerStats(this, game);
     }
     //endregion Constructors
 
@@ -147,6 +151,17 @@ public final class Player extends TurnOrdered {
     public boolean hasMinefields() {
         return (numMfCmd > 0) || (numMfConv > 0) || (numMfVibra > 0) || (numMfActive > 0) || (numMfInferno > 0)
               || getGroundObjectsToPlace().size() > 0;
+    }
+
+    public double getRatingNumber() {
+        return rating.getCurrentRating();
+    }
+
+    public PlayerRating getRatingObject() {
+        if (rating == null) {
+            rating = RatingPersistenceManager.getInstance().getPlayerRating(this.getId(), this);
+        }
+        return rating;
     }
 
     public void setNbrMFConventional(int nbrMF) {
@@ -537,12 +552,7 @@ public final class Player extends TurnOrdered {
      *
      * @return The combined strength (BV/PV) of all the player's assets
      */
-    public int getBV() {
-        return game.getInGameObjects().stream()
-              .filter(this::isMyUnit)
-              .filter(InGameObject::countForStrengthSum)
-              .mapToInt(InGameObject::getStrength).sum();
-    }
+    public int getBV() { return stats.getBV(); }
 
     /**
      * Returns true when the given unit belongs to this Player.
